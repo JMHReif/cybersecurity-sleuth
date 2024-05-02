@@ -1,0 +1,31 @@
+= Graphs for Cybersecurity
+
+Accompanying event: https://www.wearedevelopers.com/event/security-day-may-2024
+
+This repository contains code and examples for putting cybersecurity data in a graph database.
+
+== Data set
+
+Data is public. More information on loading and recreating the data set is coming soon. An example of the data model is shown below.
+
+image::cybersecurity-data-model.png[]
+
+//LEFT OFF HERE!
+
+== Notes
+
+
+
+== Running and testing this project
+
+
+
+== Presentation
+
+PDF versions of accompanying presentations are published to SpeakerDeck.
+
+* _Coming soon!_
+
+== Resources
+
+* _Coming soon!_
