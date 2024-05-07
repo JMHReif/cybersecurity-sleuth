@@ -1,0 +1,184 @@
+= Cybersecurity Graph: Sample Queries
+
+== Query 1
+
+* Find users, groups, and machines for RDP access in a particular 
+domain. RDP access allows a hacker to jump from lower-threshold machine such as 
+corporate laptop to more mission-critical application hosts.
+
+.Search Phrase
+[source,text]
+----
+Everyone with RDP access in domain <TESTLAB.LOCAL>
+----
+
+.Cypher
+[source,cypher]
+----
+MATCH (u:User)
+CALL apoc.path.expand(u, 'MEMBER_OF>|CAN_RDP>', 'Group|/Computer', 1, 10) YIELD path
+RETURN path
+----
+
+*Analysis:* Result is a too much to analyze or make sense of.
+
+== Query 2
+
+* Find a limited set of users, groups, and machines for RDP access.
+
+.Cypher
+[source,cypher]
+----
+//Find some users with access to groups/machines
+MATCH (u:User)-[r:MEMBER_OF|CAN_RDP]->(other)
+RETURN * LIMIT 50;
+----
+
+*Analysis:* Result is easy to look at, but doesn't tell us much.
+
+== Query 3
+
+* What if a user was known hacked/responded to phishing email? Let's find machines to which that user has RDP access in the domain.
+
+.Search Phrase
+[source,text]
+----
+RDP access for <HNOERENBERG04707@TESTLAB.LOCAL>
+----
+
+.Cypher
+[source,cypher]
+----
+MATCH (u:User {displayname: "Henrietta Noerenberg”})-[r:CAN_RDP]->(c:Computer)
+RETURN *;
+----
+
+*Analysis:* Only a few - things don't look so bad.
+
+== Query 4
+
+* Find groups a user is a member of
+
+.Search Phrase
+[source,text]
+----
+All groups for user <HNOERENBERG04707@TESTLAB.LOCAL>
+----
+
+.Cypher
+[source,cypher]
+----
+MATCH (u:User {displayname: "Henrietta Noerenberg"})-[r:MEMBER_OF*1..]->(g:Group)
+RETURN * LIMIT 50;
+----
+
+*Analysis:* Hmmmm, interesting. Some groups are hierarchical, so we are inheriting. Requires multi-hop analysis.
+
+== Query 5
+
+* Find groups and machines to which to which a user has RDP access.
+
+.Search Phrase
+[source,text]
+----
+*clear scene*
+
+RDP access via groups for user <HNOERENBERG04707@TESTLAB.LOCAL>
+----
+
+.Cypher
+[source,cypher]
+----
+//Find machines Henrietta can access via her groups
+MATCH p=(:User {displayname: "Henrietta Noerenberg"})-[:MEMBER_OF*1..]->(:Group)-[:CAN_RDP]->(:Computer)
+RETURN p;
+----
+
+*Analysis:* Ouch! Now see a broader scope of the problem...but still manageable...or is 
+it?
+
+== Query 6
+
+* RDP abilities by group. Shows users, groups, and machines to which they have RDP access in the 
+domain.
+
+.Search phrase
+[source,text]
+----
+Remote abilities by groups for user <HNOERENBERG04707@TESTLAB.LOCAL>
+----
+
+.Cypher
+[source,cypher]
+----
+//related Cypher
+MATCH p=(:User {displayname: "Henrietta Noerenberg"})-[:MEMBER_OF*1..]->(:Group)-[:CAN_RDP|EXECUTE_DCOM|ALLOWED_TO_DELEGATE]->(:Computer)
+RETURN p
+----
+
+*Analysis:* Additional machines that could be impacted - larger network to cover now.
+
+Notes:
+
+* https://www.varonis.com/blog/dcom-distributed-component-object-model[DCOM^]
+* https://docs.tenable.com/identity-exposure/3_x/Content/User/AttackPath/AllowedToDelegate.htm#:~:text=The%20Source%20security%20principal%20is,running%20on%20the%20Target%20computer[Delegate^]
+
+== Query 7
+
+* Who could a single user impact? Find machines, groups, and users impacted by a single exposed account.
+
+.Search Phrase
+[source,text]
+----
+*do not clear scene*
+
+Who could <HNOERENBERG04707@TESTLAB.LOCAL> impact?
+----
+
+.Cypher
+[source,cypher]
+----
+//related cypher
+MATCH p=(:User {displayname: "Henrietta Noerenberg"})-[:CAN_RDP|EXECUTE_DCOM|ALLOWED_TO_DELEGATE]->(:Computer)-[:HAS_SESSION]-()
+RETURN p LIMIT 50
+UNION
+MATCH p=(:User {displayname: "Henrietta Noerenberg"})-[:MEMBER_OF*1..]->(:Group)-[:CAN_RDP|EXECUTE_DCOM|ALLOWED_TO_DELEGATE]->(:Computer)-[:HAS_SESSION]-()
+RETURN p LIMIT 50
+----
+
+*Analysis:* This is getting pretty complex. We have multiple different entities that will need secured and/or cleaned in case of a breach. The impact grows.
+
+== Query 8
+
+* Who are the domain admins? Find if current user/hacked account could get access to a domain admin 
+account either directly or via a lateral traversal (via impacted accounts).
+
+.Search Phrase
+[source,text]
+----
+*do not clear scene*
+
+User MEMBER_OF Group name <DOMAIN_ADMIN@TESTLAB.LOCAL>
+----
+
+*Analysis:* This is the list of users with admin access. Quite a few, but doesn't show multiple hops here.
+
+== Query 9
+
+* What is the shortest path between a specific user and the admin account?
+
+.Search Phrase
+[source,text]
+----
+*clear scene*
+
+//Find User
+User displayname Henrietta Noerenberg
+
+//Find Group admin
+Group name DOMAIN ADMINS@TESTLAB.LOCAL
+
+*Select both nodes, right click, path -> shortest path*
+----
+
+*Analysis:* The user Abram Bumgarner is the link because both users share similar access. Might need to dig deeper to determine how/why they are similar to avoid attack paths.

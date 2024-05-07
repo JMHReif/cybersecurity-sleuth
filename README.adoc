@@ -2,13 +2,26 @@
 
 Accompanying event: https://www.wearedevelopers.com/event/security-day-may-2024
 
-This repository contains code and examples for putting cybersecurity data in a graph database.
+This repository contains code and examples for putting and exploring cybersecurity data in a graph database.
 
 == Data set
 
 Data is public. More information on loading and recreating the data set is coming soon. An example of the data model is shown below.
 
 image::cybersecurity-data-model.png[]
+
+=== Loading the data
+
+There are two options in this repository for loading the data.
+
+1. Load the .dump file
+2. Import the CSV files for nodes and relationships
+
+To load the .dump file into a Neo4j Aura instance, you'll need to https://dev.neo4j.com/aura-java[spin up an Aura instance^]. Then click on the instance, go to the `Import` tab, drag+drop the .dump file onto the pane, and wait for the data load to complete. Note: It might take a few extra minutes after the process completes to show the data.
+
+To import the CSV files, you will need to run the Cypher statements in the `import-csv.cypher` file to load the data. _More info coming soon!_
+
+=== Accessing with Bloom visualization tool
 
 //LEFT OFF HERE!
 
